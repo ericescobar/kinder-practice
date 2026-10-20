@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Letter Flash Cards</title>
+<title>Flash Cards</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -42,22 +42,23 @@
   .screen { width: min(100%, 520px); padding: 20px; flex: 1; display: none; flex-direction: column; }
   .screen.on { display: flex; }
   h1 { font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 6px; }
-  p.lead { color: var(--muted); margin-bottom: 20px; font-size: 1.05rem; }
+  p.lead { color: var(--muted); margin-bottom: 8px; font-size: 1rem; }
   .choice {
-    display: flex; align-items: center; gap: 14px; background: var(--btn);
-    border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; cursor: pointer;
-    box-shadow: var(--shadow); font-size: 1.15rem; font-weight: 500;
+    display: flex; align-items: center; gap: 10px; background: var(--btn);
+    border-radius: 12px; padding: 7px 12px; margin-bottom: 6px; cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,.12); font-size: 1rem; font-weight: 500;
   }
+  .grp { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 10px 0 6px; }
   .choice.c-purple { background: #EFDCFA; color: #1F2E5C; }
   .choice.c-blue { background: #D8E6FC; color: #1F2E5C; }
   .choice.c-green { background: #D5F2E2; color: #1F2E5C; }
   .choice.c-yellow { background: #FFF5BF; color: #1F2E5C; }
   .choice.c-orange { background: #FFE2C7; color: #1F2E5C; }
   .choice.c-red { background: #FFD9DE; color: #1F2E5C; }
-  .choice.c-bonus { background: #fff; color: #1F2E5C; border-top: 6px solid transparent; border-image: linear-gradient(90deg, #D7263D, #F2730A, #FFD93D, #1E8E5A, #2E6FD6, #8E44AD) 1; }
+  .choice.c-bonus { background: #fff; color: #1F2E5C; border-top: 4px solid transparent; border-image: linear-gradient(90deg, #D7263D, #F2730A, #FFD93D, #1E8E5A, #2E6FD6, #8E44AD) 1; }
   .choice.mix { background: linear-gradient(90deg, #F3D9FF, #D9E8FF, #D9F5E6, #FFF6C2, #FFE3C7, #FFD6DA); color: #1F2E5C; }
-  .choice input { width: 24px; height: 24px; accent-color: var(--good); }
-  .choice .ex { margin-left: auto; font-family: "Andika", "Comic Sans MS", sans-serif; font-size: 1.5rem; color: var(--muted); }
+  .choice input { width: 20px; height: 20px; accent-color: var(--good); }
+  .choice .ex { margin-left: auto; font-family: "Andika", "Comic Sans MS", sans-serif; font-size: 1.1rem; color: var(--muted); }
   .btn {
     display: block; width: 100%; border: 0; border-radius: 22px; padding: 18px;
     font: inherit; font-size: 1.3rem; font-weight: 700; color: #fff; background: var(--accent);
@@ -153,11 +154,10 @@
 <body>
 
 <section class="screen on" id="start">
-  <h1>Letter Flash Cards</h1>
-  <p class="lead">Pick what to practice. He says the answer out loud, you tap ✓ or ✗.</p>
-  <label class="choice"><input type="checkbox" id="optUpper"> Uppercase letters <span class="ex">A B C</span></label>
-  <label class="choice"><input type="checkbox" id="optLower"> Lowercase letters <span class="ex">a b c</span></label>
-  <label class="choice"><input type="checkbox" id="optSound"> Letter sounds <span class="ex">/a/</span></label>
+  <h1>Flash Cards</h1>
+  <button class="btn" id="startBtn">Start</button>
+  <p class="parent-note" id="startNote">Pick at least one list below.</p>
+  <div class="grp">Rainbow words</div>
   <label class="choice c-purple"><input type="checkbox" id="optPurple"> Rainbow words: purple <span class="ex">the</span></label>
   <label class="choice c-blue"><input type="checkbox" id="optBlue"> Rainbow words: blue <span class="ex">you</span></label>
   <label class="choice c-green"><input type="checkbox" id="optGreen"> Rainbow words: green <span class="ex">she</span></label>
@@ -166,8 +166,10 @@
   <label class="choice c-red"><input type="checkbox" id="optRed"> Rainbow words: red <span class="ex">too</span></label>
   <label class="choice c-bonus"><input type="checkbox" id="optBonus"> Bonus words (colors) <span class="ex">pink</span></label>
   <label class="choice mix"><input type="checkbox" id="optMix"> Mix: every rainbow word + bonus <span class="ex">🌈</span></label>
-  <button class="btn" id="startBtn">Start</button>
-  <p class="parent-note" id="startNote">26 cards per letter type, plus each word list you pick, all shuffled together.</p>
+  <div class="grp">Letters</div>
+  <label class="choice"><input type="checkbox" id="optUpper"> Uppercase letters <span class="ex">A B C</span></label>
+  <label class="choice"><input type="checkbox" id="optLower"> Lowercase letters <span class="ex">a b c</span></label>
+  <label class="choice"><input type="checkbox" id="optSound"> Letter sounds <span class="ex">/a/</span></label>
 </section>
 
 <section class="screen" id="play">
@@ -313,7 +315,7 @@
     const letters = [["upper","optUpper"],["lower","optLower"],["sound","optSound"]].filter(([,id]) => $(id).checked).map(([t]) => t);
     const words = $("optMix").checked ? WORD_TYPES : WORD_OPTS.filter(([,id]) => $(id).checked).map(([t]) => t);
     const types = letters.concat(words);
-    if (!types.length) { $("startNote").textContent = "Pick at least one type to start."; return; }
+    if (!types.length) { $("startNote").textContent = "Pick at least one list below to start."; return; }
     startRound(buildDeck(types));
   });
   $("yesBtn").addEventListener("click", () => judge(true));
