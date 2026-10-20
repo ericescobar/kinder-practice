@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Letter Flash Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #CFEAF7;
+    --card: #FFF4C2;
+    --ink: #1F2E5C;
+    --muted: #5A6A96;
+    --good: #2FA84F;
+    --bad: #E34234;
+    --btn: #FFFFFF;
+    --accent: #FF9F1C;
+    --shadow: 0 6px 0 #B9D7E8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1C2A4A; --card: #FFF4C2; --ink: #F3F6FF; --muted: #AAB6D8;
+      --btn: #2A3A60; --shadow: 0 6px 0 #0F1A33;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1C2A4A; --card: #FFF4C2; --ink: #F3F6FF; --muted: #AAB6D8;
+    --btn: #2A3A60; --shadow: 0 6px 0 #0F1A33;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: inherit; margin: 0; }
+  body {
+    height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .screen { width: min(100%, 520px); padding: 20px; flex: 1; display: none; flex-direction: column; }
+  .screen.on { display: flex; }
+  h1 { font-size: 2rem; font-weight: 700; line-height: 1.1; margin-bottom: 6px; }
+  p.lead { color: var(--muted); margin-bottom: 20px; font-size: 1.05rem; }
+  .choice {
+    display: flex; align-items: center; gap: 14px; background: var(--btn);
+    border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; cursor: pointer;
+    box-shadow: var(--shadow); font-size: 1.15rem; font-weight: 500;
+  }
+  .choice.c-purple { background: #EFDCFA; color: #1F2E5C; }
+  .choice.c-blue { background: #D8E6FC; color: #1F2E5C; }
+  .choice.c-green { background: #D5F2E2; color: #1F2E5C; }
+  .choice.c-yellow { background: #FFF5BF; color: #1F2E5C; }
+  .choice.c-orange { background: #FFE2C7; color: #1F2E5C; }
+  .choice.c-red { background: #FFD9DE; color: #1F2E5C; }
+  .choice.c-bonus { background: #fff; color: #1F2E5C; border-top: 6px solid transparent; border-image: linear-gradient(90deg, #D7263D, #F2730A, #FFD93D, #1E8E5A, #2E6FD6, #8E44AD) 1; }
+  .choice.mix { background: linear-gradient(90deg, #F3D9FF, #D9E8FF, #D9F5E6, #FFF6C2, #FFE3C7, #FFD6DA); color: #1F2E5C; }
+  .choice input { width: 24px; height: 24px; accent-color: var(--good); }
+  .choice .ex { margin-left: auto; font-family: "Andika", "Comic Sans MS", sans-serif; font-size: 1.5rem; color: var(--muted); }
+  .btn {
+    display: block; width: 100%; border: 0; border-radius: 22px; padding: 18px;
+    font: inherit; font-size: 1.3rem; font-weight: 700; color: #fff; background: var(--accent);
+    box-shadow: 0 6px 0 #C97400; cursor: pointer; margin-top: 10px;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #C97400; }
+  .btn.quiet { background: var(--btn); color: var(--ink); box-shadow: var(--shadow); }
+  .btn:focus-visible, .choice:focus-within, .judge:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  /* Play screen */
+  .top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .bar { flex: 1; height: 14px; background: var(--btn); border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--good); border-radius: 99px; transition: width .25s; }
+  .count { font-weight: 700; color: var(--muted); min-width: 60px; text-align: right; }
+  .ask { text-align: center; font-size: 1.25rem; font-weight: 500; color: var(--muted); margin-bottom: 10px; min-height: 1.5em; }
+  .card {
+    position: relative; flex: 1; min-height: 46vh; background: var(--card); color: #1F2E5C;
+    border-radius: 32px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 0 #E6CF7A; overflow: hidden;
+  }
+  .glyph {
+    font-family: "Andika", "Comic Sans MS", "Trebuchet MS", sans-serif; font-weight: 700;
+    font-size: clamp(9rem, 48vw, 16rem); line-height: 1;
+  }
+  .soundBadge {
+    display: none; position: absolute; top: 14px; left: 14px; width: 84px; height: 84px;
+    border-radius: 50%; background: #3B82D6; color: #fff; align-items: center; justify-content: center;
+    box-shadow: 0 5px 0 #245EA8;
+  }
+  .soundBadge svg { width: 54px; height: 54px; }
+  .card.sound .soundBadge { display: flex; }
+  .card.sound { background: #DDEBFF; box-shadow: 0 10px 0 #A9C6F0; }
+  .card.sound .hint { color: #3C5A8A; }
+  .card.purple { background: #8E44AD; color: #fff; box-shadow: 0 10px 0 #5B2C6F; }
+  .card.word .glyph { font-size: clamp(4.5rem, 24vw, 8rem); font-weight: 400; }
+  .chip.purple { background: #8E44AD; color: #fff; font-weight: 400; }
+  .card.blue { background: #2E6FD6; color: #fff; box-shadow: 0 10px 0 #1B4A99; }
+  .chip.blue { background: #2E6FD6; color: #fff; font-weight: 400; }
+  .card.green { background: #1E8E5A; color: #fff; box-shadow: 0 10px 0 #125C39; }
+  .chip.green { background: #1E8E5A; color: #fff; font-weight: 400; }
+  .card.yellow { background: #FFD93D; color: #1F2E5C; box-shadow: 0 10px 0 #C9A400; }
+  .chip.yellow { background: #FFD93D; color: #1F2E5C; font-weight: 400; }
+  .card.orange { background: #F2730A; color: #fff; box-shadow: 0 10px 0 #B24F00; }
+  .chip.orange { background: #F2730A; color: #fff; font-weight: 400; }
+  .card.red { background: #D7263D; color: #fff; box-shadow: 0 10px 0 #961527; }
+  .chip.red { background: #D7263D; color: #fff; font-weight: 400; }
+  .card.bonus { background: #fff; color: #1F2E5C; box-shadow: 0 10px 0 #CCCCCC; }
+  .card.bonus::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 18px;
+    background: linear-gradient(90deg, #D7263D, #F2730A, #FFD93D, #1E8E5A, #2E6FD6, #8E44AD); }
+  .chip.bonus { background: #fff; color: #1F2E5C; font-weight: 400; border: 2px solid #CCCCCC; }
+  .card.word.long .glyph { font-size: clamp(3.2rem, 17vw, 6rem); }
+  .hint { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #7A6A2E; font-size: 1rem; }
+  .stamp {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0;
+  }
+  .stamp svg { width: 70%; max-width: 300px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.15)); }
+  .stamp.show { animation: pop .75s ease-out forwards; }
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(.3) rotate(-12deg); }
+    35% { opacity: 1; transform: scale(1.1) rotate(4deg); }
+    60% { transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .card.right { background: #DDF5E3; }
+  .card.wrong { background: #FBDAD6; }
+  .judge-row { display: flex; gap: 14px; margin-top: 18px; }
+  .judge {
+    flex: 1; border: 0; border-radius: 26px; padding: 20px 0; cursor: pointer; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .judge svg { width: 54px; height: 54px; }
+  .judge.yes { background: var(--good); box-shadow: 0 7px 0 #1E7A37; }
+  .judge.no  { background: var(--bad);  box-shadow: 0 7px 0 #A62A1F; }
+  .judge:active { transform: translateY(5px); box-shadow: none; }
+  .judge[disabled] { opacity: .6; pointer-events: none; }
+  .parent-note { text-align: center; color: var(--muted); margin-top: 10px; font-size: .95rem; }
+
+  /* Results */
+  .score { font-size: 3.4rem; font-weight: 700; line-height: 1; margin: 6px 0 4px; }
+  .group { background: var(--btn); border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .group h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: "Andika", "Comic Sans MS", sans-serif; font-weight: 700; font-size: 1.6rem;
+    background: var(--card); color: #1F2E5C; border-radius: 12px; padding: 4px 12px;
+  }
+  .chip small { font-family: "Fredoka", sans-serif; font-weight: 500; font-size: .85rem; color: #7A6A2E; margin-left: 6px; }
+  .allgood { color: var(--good); font-weight: 500; }
+  @media (prefers-reduced-motion: reduce) { .stamp.show { animation: none; opacity: 1; } .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+<section class="screen on" id="start">
+  <h1>Letter Flash Cards</h1>
+  <p class="lead">Pick what to practice. He says the answer out loud, you tap ✓ or ✗.</p>
+  <label class="choice"><input type="checkbox" id="optUpper"> Uppercase letters <span class="ex">A B C</span></label>
+  <label class="choice"><input type="checkbox" id="optLower"> Lowercase letters <span class="ex">a b c</span></label>
+  <label class="choice"><input type="checkbox" id="optSound"> Letter sounds <span class="ex">/a/</span></label>
+  <label class="choice c-purple"><input type="checkbox" id="optPurple"> Rainbow words: purple <span class="ex">the</span></label>
+  <label class="choice c-blue"><input type="checkbox" id="optBlue"> Rainbow words: blue <span class="ex">you</span></label>
+  <label class="choice c-green"><input type="checkbox" id="optGreen"> Rainbow words: green <span class="ex">she</span></label>
+  <label class="choice c-yellow"><input type="checkbox" id="optYellow"> Rainbow words: yellow <span class="ex">of</span></label>
+  <label class="choice c-orange"><input type="checkbox" id="optOrange"> Rainbow words: orange <span class="ex">said</span></label>
+  <label class="choice c-red"><input type="checkbox" id="optRed"> Rainbow words: red <span class="ex">too</span></label>
+  <label class="choice c-bonus"><input type="checkbox" id="optBonus"> Bonus words (colors) <span class="ex">pink</span></label>
+  <label class="choice mix"><input type="checkbox" id="optMix"> Mix: every rainbow word + bonus <span class="ex">🌈</span></label>
+  <button class="btn" id="startBtn">Start</button>
+  <p class="parent-note" id="startNote">26 cards per letter type, plus each word list you pick, all shuffled together.</p>
+</section>
+
+<section class="screen" id="play">
+  <div class="top"><div class="bar"><i id="barFill"></i></div><div class="count" id="count">1 / 26</div></div>
+  <div class="ask" id="ask">What letter is this?</div>
+  <div class="card" id="card">
+    <div class="soundBadge" id="soundBadge" aria-label="Sound card">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 5.5a9 9 0 010 13"/></svg>
+    </div>
+    <div class="glyph" id="glyph">A</div>
+    <div class="hint" id="hint"></div>
+    <div class="stamp" id="stamp"></div>
+  </div>
+  <div class="judge-row">
+    <button class="judge yes" id="yesBtn" aria-label="Got it right">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
+    </button>
+    <button class="judge no" id="noBtn" aria-label="Got it wrong">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <p class="parent-note">Tap green if he got it, red if he didn't.</p>
+</section>
+
+<section class="screen" id="done">
+  <h1>All done!</h1>
+  <div class="score" id="score">24 / 26</div>
+  <p class="lead" id="doneLead">Here's what to work on next.</p>
+  <div id="groups"></div>
+  <button class="btn" id="retryBtn">Practice the missed ones</button>
+  <button class="btn quiet" id="againBtn">Play again</button>
+</section>
+
+<script>
+(() => {
+  const LETTERS = "abcdefghijklmnopqrstuvwxyz".split("");
+  const WORDS = { a:"apple", b:"ball", c:"cat", d:"dog", e:"egg", f:"fish", g:"goat", h:"hat", i:"igloo", j:"jam",
+    k:"kite", l:"lion", m:"moon", n:"nest", o:"octopus", p:"pig", q:"queen", r:"rain", s:"sun", t:"top",
+    u:"up", v:"van", w:"web", x:"fox", y:"yes", z:"zip" };
+  const PURPLE = ["a","I","we","the","like","go","to","can","see","and"];
+  const BLUE = ["you","do","my","are","he","with","is","all","be","up"];
+  const GREEN = ["little","she","was","had","in","on","not","but","for","have","because"];
+  const YELLOW = ["of","will","his","it","as","at","they","or","an","one","her"];
+  const ORANGE = ["said","want","here","me","this","by","how","from","if","what","help","no"];
+  const RED = ["too","has","play","look","where","good","who","come","does","there","that","funny"];
+  const BONUS = ["red","orange","yellow","green","blue","purple","pink","black","white","gray","silver","gold"];
+  const TYPES = {
+    upper: { label: "Uppercase letters", ask: "What letter is this?", show: l => l.toUpperCase(), hint: () => "" },
+    lower: { label: "Lowercase letters", ask: "What letter is this?", show: l => l, hint: () => "" },
+    sound: { label: "Letter sounds", ask: "What sound does it make?", show: l => l, hint: l => `For you: as in “${WORDS[l]}”` },
+    purple: { label: "Purple rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: PURPLE },
+    blue: { label: "Blue rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: BLUE },
+    green: { label: "Green rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: GREEN },
+    yellow: { label: "Yellow rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: YELLOW },
+    orange: { label: "Orange rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: ORANGE },
+    red: { label: "Red rainbow words", ask: "What word is this?", show: w => w, hint: () => "", items: RED },
+    bonus: { label: "Bonus words (colors)", ask: "What word is this?", show: w => w, hint: () => "", items: BONUS }
+  };
+  const $ = id => document.getElementById(id);
+  const show = id => { document.querySelectorAll(".screen").forEach(s => s.classList.remove("on")); $(id).classList.add("on"); window.scrollTo(0,0); };
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="#2FA84F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>`;
+  const CROSS = `<svg viewBox="0 0 24 24" fill="none" stroke="#E34234" stroke-width="4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+
+  let deck = [], idx = 0, missed = [], busy = false;
+
+  function buildDeck(types) {
+    const d = [];
+    types.forEach(t => (TYPES[t].items || LETTERS).forEach(l => d.push({ t, l })));
+    return shuffle(d);
+  }
+
+  function startRound(d) {
+    deck = d; idx = 0; missed = [];
+    show("play"); render();
+  }
+
+  function render() {
+    const c = deck[idx], T = TYPES[c.t];
+    $("ask").textContent = T.ask;
+    $("glyph").textContent = T.show(c.l);
+    $("hint").textContent = T.hint(c.l);
+    $("count").textContent = `${idx + 1} / ${deck.length}`;
+    $("barFill").style.width = (idx / deck.length * 100) + "%";
+    $("card").classList.remove("right", "wrong");
+    $("card").classList.toggle("sound", c.t === "sound");
+    $("card").classList.toggle("purple", c.t === "purple");
+    $("card").classList.toggle("blue", c.t === "blue");
+    $("card").classList.toggle("green", c.t === "green");
+    $("card").classList.toggle("yellow", c.t === "yellow");
+    $("card").classList.toggle("orange", c.t === "orange");
+    $("card").classList.toggle("red", c.t === "red");
+    $("card").classList.toggle("bonus", c.t === "bonus");
+    $("card").classList.toggle("long", c.l.length > 5);
+    $("card").classList.toggle("word", c.l.length > 1);
+    $("stamp").classList.remove("show");
+  }
+
+  function judge(ok) {
+    if (busy) return; busy = true;
+    const c = deck[idx];
+    if (!ok) missed.push(c);
+    $("stamp").innerHTML = ok ? CHECK : CROSS;
+    $("stamp").classList.add("show");
+    $("card").classList.add(ok ? "right" : "wrong");
+    $("yesBtn").disabled = $("noBtn").disabled = true;
+    setTimeout(() => {
+      busy = false; $("yesBtn").disabled = $("noBtn").disabled = false;
+      idx++;
+      if (idx >= deck.length) finish(); else render();
+    }, 850);
+  }
+
+  function finish() {
+    const total = deck.length, right = total - missed.length;
+    $("score").textContent = `${right} / ${total}`;
+    const groups = $("groups"); groups.innerHTML = "";
+    if (!missed.length) {
+      $("doneLead").innerHTML = `<span class="allgood">He got every single one. Nothing to work on!</span>`;
+      $("retryBtn").style.display = "none";
+    } else {
+      $("doneLead").textContent = "Here's what to work on next.";
+      $("retryBtn").style.display = "block";
+      Object.keys(TYPES).forEach(t => {
+        const ls = [...new Set(missed.filter(m => m.t === t).map(m => m.l))].sort((a, b) => a.localeCompare(b));
+        if (!ls.length) return;
+        const g = document.createElement("div"); g.className = "group";
+        g.innerHTML = `<h2>${TYPES[t].label} (${ls.length})</h2><div class="chips">` +
+          ls.map(l => `<span class="chip ${t}">${TYPES[t].show(l)}${t === "sound" ? `<small>${WORDS[l]}</small>` : ""}</span>`).join("") + `</div>`;
+        groups.appendChild(g);
+      });
+    }
+    show("done");
+  }
+
+  const WORD_TYPES = ["purple","blue","green","yellow","orange","red","bonus"];
+  const WORD_OPTS = [["purple","optPurple"],["blue","optBlue"],["green","optGreen"],["yellow","optYellow"],["orange","optOrange"],["red","optRed"],["bonus","optBonus"]];
+  $("optMix").addEventListener("change", e => {
+    WORD_OPTS.forEach(([, id]) => { $(id).disabled = e.target.checked; $(id).parentElement.style.opacity = e.target.checked ? .45 : 1; });
+  });
+  $("startBtn").addEventListener("click", () => {
+    const letters = [["upper","optUpper"],["lower","optLower"],["sound","optSound"]].filter(([,id]) => $(id).checked).map(([t]) => t);
+    const words = $("optMix").checked ? WORD_TYPES : WORD_OPTS.filter(([,id]) => $(id).checked).map(([t]) => t);
+    const types = letters.concat(words);
+    if (!types.length) { $("startNote").textContent = "Pick at least one type to start."; return; }
+    startRound(buildDeck(types));
+  });
+  $("yesBtn").addEventListener("click", () => judge(true));
+  $("noBtn").addEventListener("click", () => judge(false));
+  $("retryBtn").addEventListener("click", () => startRound(shuffle(missed.slice())));
+  $("againBtn").addEventListener("click", () => show("start"));
+  document.addEventListener("keydown", e => {
+    if (!$("play").classList.contains("on")) return;
+    if (e.key === "ArrowRight" || e.key === "y") judge(true);
+    if (e.key === "ArrowLeft" || e.key === "n") judge(false);
+  });
+})();
+</script>
+</body>
+</html>
